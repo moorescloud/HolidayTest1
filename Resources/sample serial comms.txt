@@ -1,0 +1,120 @@
+Holiday Test Process - serial comms
+31 August 2013
+Based on firmware versions
+HolidayTest07
+HolidayDuino04
+
+Lines starting with > are outgoing commands - no CR or LF needed
+Lines starting with < are response terminated with CRLF, including echoed command
+
+Set DTR to turn on power
+expect "0x8020a014" indicating no SD for boot - may also get some "noise"
+may also get other hex codes like "0x80502008", and they will repeat
+
+If CTS gets set, then an over current occurred (more than 400mA)
+Clearing DTR will clear overcurrent error
+
+Set RTS to connect imx233 as USB device
+Run holitest.cmd to bootload imx over USB
+Possible that bootload will fail and need to be retried
+
+Ignore boot messages - look for "HolidayTest"
+Boot messages will be dependant on final code base & compile time
+<PowerPrep start initialize power...
+<Configured for 5v only power source. Battery powered operation disabled.
+<Aug 28 2013 21:11:27
+<EMI_CTRL 0x1C084040
+<FRAC 0x92926152
+<init_ddr_mt46v32m16_133Mhz
+<power 0x00820710
+<New Frac 0x92926113
+<start change cpu freq
+<hbus 0x00000003
+<cpu 0x00010002
+<HolidayTest07
+
+Once the firmware is running, RTS can be cleared
+
+Check OCOTP - may already be programmed - ignore CUST2 & CUST3...
+>o
+<oROM0=0x00200008 CUST0=0x4D434831 CUST1=0x0000000B CUST2=0x00000000 CUST3=0x00000000 LOCK=0x40880140
+
+Program OCOTP - only programs non-zero values
+SERIALNM is hex version of decimal YYMMNNNNNN (e.g. 1308000012 = 4DF67F0C)
+Double check values returned in echo and on final write
+Once written, bits can be set, but not cleared
+Lock CUST0 and CUST1 to avoid changes
+>p00200008
+<p00200008=0x00200008
+>m4D434831
+<m4D434831=0x4D434831
+>nSERIALNM
+<n4DF67F0C=0x4DF67F0C
+>l00000003
+<l00000003=0x00000003
+>w!
+<w!ROM0=0x00200008 CUST0=0x4D434831 CUST1=0x4DF67F0C CUST2=0x00000000 CUST3=0x00000000 LOCK=0x40880143
+
+Test RAM
+This is slow - currently takes approx 45 seconds
+But we can do ATmega programming in parallel with RAM test
+>t
+<tmemory test (64MB): ................++++++++++++++++................+++++++++++
++++++passed
+
+Check ATmega firmware comms and version
+ATmega will actually send this when it boots but we may miss it while busy in RAM test
+LED will start to switch between red and blue (driven by ATmega f/w)
+>?
+<?HolidayDuino04
+
+Supply voltage test - not very accurate
+Value could read anywhere in range of 4500-5650
+Based on 4.9-5.1V in, and 1.0-1.2V bandgap reference
+>V
+<V5239
+
+Analog I/O tests - 1V, 2V, 3V, and 4V on inputs
+Readings should be 204,410,614,819 all +/-5
+>0A
+<0A203
+>1A
+<1A409
+>2A
+<2A614
+>3A
+<3A820
+
+Button check - should all be off
+>B
+<B0
+
+Test and program EEPROM
+>i
+<iI2C EEPROM erased
+>h
+<hI2C EEPROM prepped
+
+Verify EEPROM via ATmega
+>0C
+<0C104
+>1C
+<1C1
+>2C
+<2C8
+>3C
+<3C50
+>4C
+<4C0
+>5C
+<5C0
+
+SPI Test
+>1T
+<1T1
+>s00ffffff
+<s00ffffff:ff,ff,ff
+
+Light up LED green for PASS
+>s0000ff00
+<s0000ff00:00,ff,00

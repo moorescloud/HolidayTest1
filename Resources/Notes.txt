@@ -1,0 +1,33 @@
+﻿State Machine Notes
+
+listViewStatus.Items
+"Power Test"
+"Check imx communications"
+"Bootload imx test firmware"
+"Check imx OTP/serial number"
+"Program imx OTP/serial number"
+"Print label"
+"Program ATmega"
+"Check RAM"
+"Check ATmega communications"
+"Check Supply Voltage (estimate)"
+"Check Buttons (are off)"
+"Check Analog"
+"Erase I2C EEPROM (page 0)"
+"Prepare I2C EEPROM"
+"Verify I2C EEPROM"
+"Test SPI"
+
+imageList1.Images
+0 none
+1 here
+2 pass
+3 fail
+4 retry
+5 info
+6 star
+7 warn
+8 restart
+9 power
+10 plus 
+11 minus

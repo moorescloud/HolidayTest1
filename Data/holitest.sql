@@ -1,0 +1,30 @@
+CREATE TABLE [serial] (
+[id] INTEGER  PRIMARY KEY NOT NULL,
+[adate] DATE  NOT NULL,
+[atime] TIME  NOT NULL,
+[status] VARCHAR(20)  NOT NULL,
+[mac] VARCHAR(20)  NOT NULL
+);
+CREATE TABLE [setting] (
+[id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[name] VARCHAR(20)  NOT NULL,
+[value] VARCHAR(40)  NOT NULL
+);
+
+CREATE TABLE [event] (
+[id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[sid] INTEGER  NOT NULL,
+[sdate] DATE  NOT NULL,
+[stime] TIME  NOT NULL,
+[note] VARCHAR(250)  NOT NULL
+);
+
+CREATE UNIQUE INDEX [IDX_SETTING_NAME] ON [setting](
+[name]  ASC
+);
+
+CREATE INDEX [IDX_EVENT_TS] ON [event](
+[sid]  ASC,
+[sdate]  ASC,
+[stime]  ASC
+);
