@@ -127,6 +127,7 @@
             this.labelVersion.TabIndex = 6;
             this.labelVersion.Text = "Version: ...";
             this.labelVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.labelVersion.MouseClick += new System.Windows.Forms.MouseEventHandler(this.labelVersion_MouseClick);
             // 
             // buttonBegin
             // 

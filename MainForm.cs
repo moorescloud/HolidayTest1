@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO;
 using Microsoft.Win32;
 
 namespace HolidayTest1
@@ -156,7 +157,24 @@ namespace HolidayTest1
                 serialPort1.RtsEnable = false;
                 if (serialPort1.IsOpen) serialPort1.Close();
 
-                AddLog("Total test time = " + DateTime.Now.Subtract(teststart).Seconds.ToString() + " seconds"); 
+                AddLog("Total test time = " + DateTime.Now.Subtract(teststart).Seconds.ToString() + " seconds");
+
+                if (textBoxSerial.Text.Length > 0)
+                {
+                    try
+                    {
+                        // save log, appending if already exists
+                        StreamWriter sw = new StreamWriter(String.Format("Data\\{0}.log", textBoxSerial.Text), true);
+                        for (int i = 0; i < listViewLog.Items.Count; i++)
+                            sw.WriteLine(listViewLog.Items[i].Text);
+                        sw.Close();
+                        sw.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Couldn't save log: " + ex.Message);
+                    }
+                }
 
                 buttonBegin.Text = "Begin Test";
                 buttonBegin.ForeColor = Color.DarkGreen;
@@ -657,6 +675,11 @@ namespace HolidayTest1
             try
             {
                 SQLiteDatabase db = new SQLiteDatabase(defaultdb);
+
+                string sql = "select id from serial where id = " + n.ToString();
+                DataTable d = db.GetDataTable(sql);
+                if (d.Rows.Count > 0) return false;
+
                 DateTime dt = DateTime.Now;
                 String adate = String.Format("{0:D4}/{1:D2}/{2:D2}", dt.Year, dt.Month, dt.Day);
                 String atime = String.Format("{0:D2}:{1:D2}:{2:D2}", dt.Hour, dt.Minute, dt.Second);
@@ -805,7 +828,10 @@ namespace HolidayTest1
                                 }
                                 serialhex = serialnum.ToString("X8");
                                 ShowSerial(serialnum.ToString());
-                                AddLog("existing serial number " + serialnum.ToString("D10"));// + " = 0x" + serialhex);
+                                if (AllocateSerial(serialnum))
+                                    AddLog("Reallocated serial number " + serialnum.ToString("D10"));// + " = 0x" + serialhex);
+                                else
+                                    AddLog("Existing serial number " + serialnum.ToString("D10"));// + " = 0x" + serialhex);
                             }
                             if (!s.Contains("CUST1=0x" + serialhex))
                             {
@@ -879,8 +905,10 @@ namespace HolidayTest1
                             }
                             serialhex = serialnum.ToString("X8");
                             ShowSerial(serialnum.ToString());
-                            AllocateSerial(serialnum);
-                            AddLog("allocated serial number " + serialnum.ToString("D10") + " = 0x" + serialhex);
+                            if (AllocateSerial(serialnum))
+                                AddLog("Allocated serial number " + serialnum.ToString("D10"));// + " = 0x" + serialhex);
+                            else
+                                AddLogErr("Failed to allocate serial number - DUPLICATE?");
                             ItemState(ITEM.PRINTLABEL, IMAGE.HERE);
                             PrintLabel(serialnum.ToString("D10"));
                             if (!otpupdate)
@@ -1402,8 +1430,10 @@ namespace HolidayTest1
         private void buttonGetNext_Click(object sender, EventArgs e)
         {
             serialnum = GetNextSerial();
-            if (snprefix>0)
+            if (snprefix > 0)
                 AddLog("Next SN = " + serialnum.ToString());
+            else
+                AddLog("Cannot get a serial number - have you begun a batch");
         }
 
         private void buttonAllocate_Click(object sender, EventArgs e)
@@ -1435,6 +1465,16 @@ namespace HolidayTest1
             snprefix = 0;
             AddLog("Test Station # = " + stationnum.ToString());
             Registry.SetValue(keyname, "TestStationNum", stationnum);
+        }
+
+        private void labelVersion_MouseClick(object sender, MouseEventArgs e)
+        {
+            //AddLog("click " + e.Button.ToString() + " " + e.Clicks.ToString() + " " + e.Delta.ToString());
+            if (e.Button == MouseButtons.Right && Control.ModifierKeys == Keys.Control)
+            {
+                buttonGetNext.Visible = true;
+                buttonAllocate.Visible = true;
+            }
         }
     }
 }
